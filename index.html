@@ -1,1 +1,171 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StrengthsFinder 資料</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f3eb;
+      --panel: rgba(255, 255, 255, 0.88);
+      --ink: #27313f;
+      --muted: #687386;
+      --accent: #6f5de7;
+      --accent-2: #19a7a8;
+      --ring: rgba(111, 93, 231, 0.28);
+      --shadow: 0 18px 45px rgba(42, 39, 58, 0.16);
+      --radius: 24px;
+      --card-min: 280px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", sans-serif;
+    }
 
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(255, 201, 121, 0.38), transparent 34rem),
+        radial-gradient(circle at 90% 8%, rgba(119, 215, 216, 0.34), transparent 28rem),
+        linear-gradient(135deg, #fbf7ef 0%, var(--bg) 55%, #eef7f7 100%);
+    }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    [hidden] { display: none !important; }
+
+    .app-shell { width: min(1440px, 100%); margin: 0 auto; padding: clamp(16px, 3vw, 32px); }
+    .hero { padding: clamp(12px, 2vw, 24px) 4px 22px; }
+    .eyebrow { margin: 0 0 8px; color: var(--accent); font-size: .78rem; font-weight: 900; letter-spacing: .16em; }
+    h1 { margin: 0; font-size: clamp(1.8rem, 5vw, 3.2rem); letter-spacing: -.04em; }
+    .lead { max-width: 680px; margin: 12px 0 0; color: var(--muted); font-weight: 650; line-height: 1.7; }
+
+    .panel {
+      border: 1px solid rgba(255,255,255,.72);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+    .toolbar {
+      position: sticky;
+      top: 12px;
+      z-index: 10;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      gap: 14px 24px;
+      margin-bottom: 22px;
+      padding: 16px;
+    }
+    .control { display: grid; flex: 1 1 280px; gap: 7px; color: var(--muted); font-size: .86rem; font-weight: 850; }
+    .control input[type="search"] {
+      width: 100%;
+      padding: 11px 15px;
+      border: 1px solid rgba(104,115,134,.24);
+      border-radius: 999px;
+      outline: none;
+      color: var(--ink);
+      background: rgba(255,255,255,.86);
+    }
+    .control input[type="search"]:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--ring); }
+    .size-control { flex: 1 1 260px; max-width: 420px; }
+    .range-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; }
+    input[type="range"] { width: 100%; accent-color: var(--accent); }
+    .count { margin-left: auto; padding: 9px 13px; border-radius: 999px; color: var(--accent); background: rgba(111,93,231,.1); font-weight: 900; white-space: nowrap; }
+
+    .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--card-min)), 1fr)); gap: 18px; align-items: start; }
+    .card { overflow: hidden; transition: transform .18s ease, box-shadow .18s ease; }
+    .card:hover, .card:focus-within { z-index: 2; transform: translateY(-4px); box-shadow: 0 22px 54px rgba(42,39,58,.2); }
+    .image-button { display: block; width: 100%; padding: 0; border: 0; color: inherit; background: transparent; text-align: left; }
+    .image-wrap { aspect-ratio: 16 / 10; overflow: hidden; background: #e8edf4; }
+    .image-wrap img { display: block; width: 100%; height: 100%; object-fit: contain; transition: transform .25s ease; }
+    .card:hover img { transform: scale(1.015); }
+    .caption { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; background: rgba(255,255,255,.68); }
+    .caption strong { font-size: 1rem; }
+    .open-label { color: var(--accent); font-size: .78rem; font-weight: 900; }
+    .empty { grid-column: 1 / -1; margin: 0; padding: 40px; color: var(--muted); text-align: center; font-weight: 800; }
+
+    @media (max-width: 600px) {
+      .app-shell { padding: 12px; }
+      .toolbar { top: 6px; gap: 12px; }
+      .count { margin-left: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="hero">
+      <p class="eyebrow">STRENGTHSFINDER ARCHIVE</p>
+      <h1>ストレングスファインダー資料</h1>
+      <p class="lead">各資質の画像をまとめて閲覧できます。画像を選択すると、大きなサイズで表示します。</p>
+    </header>
+
+    <section class="toolbar panel" aria-label="表示設定">
+      <label class="control" for="search">
+        資質名で検索
+        <input id="search" type="search" placeholder="例：戦略性、共感性" autocomplete="off">
+      </label>
+      <label class="control size-control" for="cardSize">
+        画像サイズ
+        <span class="range-row"><span>小</span><input id="cardSize" type="range" min="200" max="1180" value="280" step="20"><span>大</span></span>
+      </label>
+      <output id="count" class="count" aria-live="polite"></output>
+    </section>
+
+    <section id="gallery" class="gallery" aria-label="資質画像一覧"></section>
+  </main>
+
+  <script>
+    // Browserだけではフォルダを列挙できないため、同階層の画像ファイル名をここで管理します。
+    const imageNames = [
+      "アレンジ", "コミュニケーション", "ポジティブ", "信念", "個別化", "公平性", "共感性",
+      "内省", "分析思考", "包含", "原点思考", "収集心", "回復志向", "学習欲", "慎重さ",
+      "成長促進", "戦略性", "指令性", "最上志向", "未来志向", "活発性", "目標志向", "着想",
+      "社交性", "競争性", "自己確信", "自我", "規律性", "親密性", "調和性", "責任感",
+      "運命思考", "達成欲", "適応性"
+    ];
+
+    const gallery = document.querySelector("#gallery");
+    const search = document.querySelector("#search");
+    const cardSize = document.querySelector("#cardSize");
+    const count = document.querySelector("#count");
+    let visibleImages = imageNames;
+
+    const imagePath = (name) => `strength_detail/${encodeURIComponent(name)}.png`;
+
+    function render() {
+      const query = search.value.trim().toLocaleLowerCase("ja");
+      visibleImages = imageNames.filter((name) => name.toLocaleLowerCase("ja").includes(query));
+      count.textContent = `${visibleImages.length} / ${imageNames.length} 件`;
+      gallery.innerHTML = visibleImages.length
+        ? visibleImages.map((name, index) => `
+          <article class="card panel">
+            <button class="image-button" type="button" data-index="${index}" aria-label="${name}を拡大表示">
+              <div class="image-wrap"><img src="${imagePath(name)}" alt="${name}の資料" loading="lazy" decoding="async"></div>
+              <div class="caption"><strong>${name}</strong><span class="open-label">クリックで拡大</span></div>
+            </button>
+          </article>`).join("")
+        : `<p class="empty panel">「${escapeHtml(search.value.trim())}」に一致する画像はありません。</p>`;
+    }
+
+    function escapeHtml(value) {
+      const node = document.createElement("div");
+      node.textContent = value;
+      return node.innerHTML;
+    }
+
+    gallery.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-index]");
+      if (!button) return;
+      cardSize.value = cardSize.max;
+      document.documentElement.style.setProperty("--card-min", `${cardSize.max}px`);
+      button.closest(".card")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    search.addEventListener("input", render);
+    cardSize.addEventListener("input", () => document.documentElement.style.setProperty("--card-min", `${cardSize.value}px`));
+    render();
+  </script>
+</body>
+</html>
