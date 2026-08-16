@@ -121,6 +121,25 @@
     .caption { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; background: rgba(255,255,255,.68); }
     .caption strong { font-size: 1rem; }
     .open-label { color: var(--accent); font-size: .78rem; font-weight: 900; }
+    .related { padding: 0 16px 16px; background: rgba(255,255,255,.68); }
+    .related-title { margin: 0 0 8px; color: var(--muted); font-size: .75rem; font-weight: 850; }
+    .related-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+    .related-tag {
+      padding: 7px 12px;
+      border: 1px solid rgba(111,93,231,.2);
+      border-radius: 999px;
+      color: var(--accent);
+      background: rgba(111,93,231,.09);
+      font-size: .82rem;
+      font-weight: 900;
+      transition: color .18s ease, background .18s ease, transform .18s ease;
+    }
+    .related-tag:hover, .related-tag:focus-visible { color: white; background: var(--accent); transform: translateY(-1px); }
+    .card.is-jump-target { animation: jump-highlight 1.4s ease; }
+    @keyframes jump-highlight {
+      0%, 100% { box-shadow: var(--shadow); }
+      35% { box-shadow: 0 0 0 6px var(--ring), 0 22px 54px rgba(42,39,58,.2); }
+    }
     .empty { grid-column: 1 / -1; margin: 0; padding: 40px; color: var(--muted); text-align: center; font-weight: 800; }
 
     @media (max-width: 600px) {
@@ -176,6 +195,12 @@
       "運命思考", "達成欲", "適応性"
     ];
 
+    // 見分けにくい資質を相互に行き来できるよう、資質名ごとに関連先を定義します。
+    const relatedStrengths = {
+      "達成欲": ["責任感"],
+      "責任感": ["達成欲"]
+    };
+
     const gallery = document.querySelector("#gallery");
     const search = document.querySelector("#search");
     const cardSize = document.querySelector("#cardSize");
@@ -193,13 +218,26 @@
       count.textContent = `${visibleImages.length} / ${imageNames.length} 件`;
       gallery.innerHTML = visibleImages.length
         ? visibleImages.map((name, index) => `
-          <article class="card panel">
+          <article id="strength-${name}" class="card panel">
             <button class="image-button" type="button" data-index="${index}" aria-label="${name}を拡大表示">
               <div class="image-wrap"><img src="${imagePath(name)}" alt="${name}の資料" loading="lazy" decoding="async"></div>
               <div class="caption"><strong>${name}</strong><span class="open-label">クリックで拡大</span></div>
             </button>
+            ${renderRelatedStrengths(name)}
           </article>`).join("")
         : `<p class="empty panel">「${escapeHtml(search.value.trim())}」に一致する画像はありません。</p>`;
+    }
+
+    function renderRelatedStrengths(name) {
+      const related = relatedStrengths[name];
+      if (!related?.length) return "";
+      return `
+        <nav class="related" aria-label="${name}と混同しやすいタイプ">
+          <p class="related-title">混同しやすいタイプ</p>
+          <div class="related-tags">
+            ${related.map((relatedName) => `<button class="related-tag" type="button" data-related="${relatedName}">${relatedName}</button>`).join("")}
+          </div>
+        </nav>`;
     }
 
     function escapeHtml(value) {
@@ -268,6 +306,19 @@
     });
 
     gallery.addEventListener("click", (event) => {
+      const relatedTag = event.target.closest("[data-related]");
+      if (relatedTag) {
+        const targetName = relatedTag.dataset.related;
+        search.value = "";
+        render();
+        requestAnimationFrame(() => {
+          const targetCard = document.getElementById(`strength-${targetName}`);
+          targetCard?.scrollIntoView({ behavior: "smooth", block: "center" });
+          targetCard?.classList.add("is-jump-target");
+          window.setTimeout(() => targetCard?.classList.remove("is-jump-target"), 1400);
+        });
+        return;
+      }
       const button = event.target.closest("[data-index]");
       if (!button) return;
       cardSize.value = cardSize.max;
