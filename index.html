@@ -86,24 +86,10 @@
     .open-label { color: var(--accent); font-size: .78rem; font-weight: 900; }
     .empty { grid-column: 1 / -1; margin: 0; padding: 40px; color: var(--muted); text-align: center; font-weight: 800; }
 
-    dialog { width: min(96vw, 1280px); max-width: none; height: min(94vh, 920px); padding: 0; border: 0; border-radius: 24px; background: #171923; box-shadow: 0 28px 90px rgba(0,0,0,.48); }
-    dialog::backdrop { background: rgba(20,23,32,.78); backdrop-filter: blur(6px); }
-    .lightbox { position: relative; display: grid; grid-template-rows: 1fr auto; width: 100%; height: 100%; }
-    .lightbox-image { display: grid; place-items: center; min-height: 0; padding: 58px 22px 18px; }
-    .lightbox-image img { display: block; max-width: 100%; max-height: 100%; object-fit: contain; }
-    .lightbox-footer { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 14px 70px; color: white; background: rgba(0,0,0,.25); text-align: center; }
-    .close, .nav { position: absolute; z-index: 2; display: grid; place-items: center; border: 0; border-radius: 999px; color: white; background: rgba(255,255,255,.16); }
-    .close { top: 14px; right: 14px; width: 42px; height: 42px; font-size: 1.5rem; }
-    .nav { top: 50%; width: 46px; height: 46px; transform: translateY(-50%); font-size: 1.7rem; }
-    .nav:hover, .close:hover { background: rgba(255,255,255,.28); }
-    .prev { left: 14px; } .next { right: 14px; }
-
     @media (max-width: 600px) {
       .app-shell { padding: 12px; }
       .toolbar { top: 6px; gap: 12px; }
       .count { margin-left: 0; }
-      dialog { width: 100vw; height: 100dvh; border-radius: 0; }
-      .lightbox-footer { padding-inline: 60px; }
     }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }
   </style>
@@ -123,23 +109,13 @@
       </label>
       <label class="control size-control" for="cardSize">
         画像サイズ
-        <span class="range-row"><span>小</span><input id="cardSize" type="range" min="200" max="520" value="280" step="20"><span>大</span></span>
+        <span class="range-row"><span>小</span><input id="cardSize" type="range" min="200" max="1180" value="280" step="20"><span>大</span></span>
       </label>
       <output id="count" class="count" aria-live="polite"></output>
     </section>
 
     <section id="gallery" class="gallery" aria-label="資質画像一覧"></section>
   </main>
-
-  <dialog id="viewer" aria-labelledby="viewerTitle">
-    <div class="lightbox">
-      <button class="close" type="button" aria-label="閉じる">×</button>
-      <button class="nav prev" type="button" aria-label="前の画像">‹</button>
-      <div class="lightbox-image"><img id="viewerImage" alt=""></div>
-      <button class="nav next" type="button" aria-label="次の画像">›</button>
-      <div class="lightbox-footer"><strong id="viewerTitle"></strong><span id="viewerPosition"></span></div>
-    </div>
-  </dialog>
 
   <script>
     // Browserだけではフォルダを列挙できないため、同階層の画像ファイル名をここで管理します。
@@ -155,12 +131,7 @@
     const search = document.querySelector("#search");
     const cardSize = document.querySelector("#cardSize");
     const count = document.querySelector("#count");
-    const viewer = document.querySelector("#viewer");
-    const viewerImage = document.querySelector("#viewerImage");
-    const viewerTitle = document.querySelector("#viewerTitle");
-    const viewerPosition = document.querySelector("#viewerPosition");
     let visibleImages = imageNames;
-    let currentIndex = 0;
 
     const imagePath = (name) => `strength_detail/${encodeURIComponent(name)}.png`;
 
@@ -173,7 +144,7 @@
           <article class="card panel">
             <button class="image-button" type="button" data-index="${index}" aria-label="${name}を拡大表示">
               <div class="image-wrap"><img src="${imagePath(name)}" alt="${name}の資料" loading="lazy" decoding="async"></div>
-              <div class="caption"><strong>${name}</strong><span class="open-label">拡大して見る ↗</span></div>
+              <div class="caption"><strong>${name}</strong><span class="open-label">クリックで拡大</span></div>
             </button>
           </article>`).join("")
         : `<p class="empty panel">「${escapeHtml(search.value.trim())}」に一致する画像はありません。</p>`;
@@ -185,32 +156,15 @@
       return node.innerHTML;
     }
 
-    function showImage(index) {
-      currentIndex = (index + visibleImages.length) % visibleImages.length;
-      const name = visibleImages[currentIndex];
-      viewerImage.src = imagePath(name);
-      viewerImage.alt = `${name}の資料`;
-      viewerTitle.textContent = name;
-      viewerPosition.textContent = `${currentIndex + 1} / ${visibleImages.length}`;
-    }
-
     gallery.addEventListener("click", (event) => {
       const button = event.target.closest("[data-index]");
       if (!button) return;
-      showImage(Number(button.dataset.index));
-      viewer.showModal();
+      cardSize.value = cardSize.max;
+      document.documentElement.style.setProperty("--card-min", `${cardSize.max}px`);
+      button.closest(".card")?.scrollIntoView({ behavior: "smooth", block: "center" });
     });
     search.addEventListener("input", render);
     cardSize.addEventListener("input", () => document.documentElement.style.setProperty("--card-min", `${cardSize.value}px`));
-    document.querySelector(".close").addEventListener("click", () => viewer.close());
-    document.querySelector(".prev").addEventListener("click", () => showImage(currentIndex - 1));
-    document.querySelector(".next").addEventListener("click", () => showImage(currentIndex + 1));
-    viewer.addEventListener("click", (event) => { if (event.target === viewer) viewer.close(); });
-    viewer.addEventListener("keydown", (event) => {
-      if (event.key === "ArrowLeft") showImage(currentIndex - 1);
-      if (event.key === "ArrowRight") showImage(currentIndex + 1);
-    });
-
     render();
   </script>
 </body>
