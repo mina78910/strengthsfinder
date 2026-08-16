@@ -56,7 +56,38 @@
       align-items: end;
       gap: 14px 24px;
       margin-bottom: 22px;
-      padding: 16px;
+      padding: 16px 58px 16px 16px;
+    }
+    .toolbar-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: grid;
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      place-items: center;
+      border: 0;
+      border-radius: 50%;
+      color: var(--muted);
+      background: rgba(104,115,134,.1);
+      font-size: 1.45rem;
+      line-height: 1;
+    }
+    .toolbar-close:hover, .toolbar-close:focus-visible { color: white; background: var(--accent); }
+    .toolbar-open {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      z-index: 10;
+      padding: 11px 16px;
+      border: 0;
+      border-radius: 999px;
+      color: white;
+      background: var(--accent);
+      box-shadow: var(--shadow);
+      font-size: .86rem;
+      font-weight: 900;
     }
     .control { display: grid; flex: 1 1 280px; gap: 7px; color: var(--muted); font-size: .86rem; font-weight: 850; }
     .control input[type="search"] {
@@ -144,7 +175,7 @@
 
     @media (max-width: 600px) {
       .app-shell { padding: 12px; }
-      .toolbar { top: 6px; gap: 12px; }
+      .toolbar { top: 6px; gap: 12px; padding: 52px 16px 16px; }
       .count { margin-left: 0; }
     }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }
@@ -158,7 +189,8 @@
       <p class="lead">各資質の画像をまとめて閲覧できます。画像を選択すると、大きなサイズで表示します。</p>
     </header>
 
-    <section class="toolbar panel" aria-label="表示設定">
+    <section id="toolbar" class="toolbar panel" aria-label="表示設定">
+      <button id="toolbarClose" class="toolbar-close" type="button" aria-controls="toolbar" aria-label="表示設定を閉じる">×</button>
       <label class="control" for="search">
         資質名で検索
         <input id="search" type="search" placeholder="例：戦略性、共感性" autocomplete="off">
@@ -169,6 +201,7 @@
       </label>
       <output id="count" class="count" aria-live="polite"></output>
     </section>
+    <button id="toolbarOpen" class="toolbar-open" type="button" aria-controls="toolbar" hidden>表示設定を開く</button>
 
     <details id="csvSection" class="csv-section panel">
       <summary>
@@ -198,9 +231,16 @@
     // 見分けにくい資質を相互に行き来できるよう、資質名ごとに関連先を定義します。
     const relatedStrengths = {
       "達成欲": ["責任感"],
-      "責任感": ["達成欲"]
+      "責任感": ["達成欲"],
+      "社交性": ["コミュニケーション"],
+      "コミュニケーション": ["社交性"],
+      "目標志向": ["最上志向"],
+      "最上志向": ["目標志向"]
     };
 
+    const toolbar = document.querySelector(".toolbar");
+    const toolbarClose = document.querySelector("#toolbarClose");
+    const toolbarOpen = document.querySelector("#toolbarOpen");
     const gallery = document.querySelector("#gallery");
     const search = document.querySelector("#search");
     const cardSize = document.querySelector("#cardSize");
@@ -209,6 +249,18 @@
     const csvContent = document.querySelector("#csvContent");
     let visibleImages = imageNames;
     let csvLoaded = false;
+
+    toolbarClose.addEventListener("click", () => {
+      toolbar.hidden = true;
+      toolbarOpen.hidden = false;
+      toolbarOpen.focus();
+    });
+
+    toolbarOpen.addEventListener("click", () => {
+      toolbar.hidden = false;
+      toolbarOpen.hidden = true;
+      toolbarClose.focus();
+    });
 
     const imagePath = (name) => `strength_detail/${encodeURIComponent(name)}.png`;
 
