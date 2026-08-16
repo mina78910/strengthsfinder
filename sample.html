@@ -1,0 +1,1858 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MBTI 資料</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f7f3eb;
+      --panel: rgba(255, 255, 255, 0.88);
+      --ink: #27313f;
+      --muted: #687386;
+      --accent: #6f5de7;
+      --accent-2: #19a7a8;
+      --ring: rgba(111, 93, 231, 0.28);
+      --shadow: 0 18px 45px rgba(42, 39, 58, 0.16);
+      --radius: 24px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(255, 201, 121, 0.38), transparent 34rem),
+        radial-gradient(circle at 90% 8%, rgba(119, 215, 216, 0.34), transparent 28rem),
+        linear-gradient(135deg, #fbf7ef 0%, var(--bg) 55%, #eef7f7 100%);
+    }
+
+    button, input, select { font: inherit; }
+
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.58;
+    }
+
+    input[type="search"], .tag-input, .sort-select {
+      border: 1px solid rgba(104, 115, 134, 0.24);
+      border-radius: 999px;
+      padding: 11px 14px;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.82);
+      outline: none;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    input[type="search"]:focus, .tag-input:focus, .sort-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px var(--ring);
+    }
+
+    .paste-highlight {
+      outline: 4px solid var(--ring);
+      outline-offset: 4px;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .app-shell {
+      width: min(1440px, 100%);
+      margin: 0 auto;
+      padding: clamp(12px, 3vw, 28px);
+    }
+
+    .viewer-card {
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      background: var(--panel);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .toolbar {
+      position: sticky;
+      top: 12px;
+      z-index: 10;
+      display: grid;
+      gap: 14px;
+      margin-bottom: 20px;
+      padding: 16px;
+    }
+
+    [hidden] { display: none !important; }
+
+    .toolbar[hidden] { display: none; }
+
+    .toolbar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .toolbar-title {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 950;
+    }
+
+    .toolbar-header-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .toolbar-toggle, .toolbar-close, .toolbar-open-fixed, .orientation-toggle {
+      border: 0;
+      border-radius: 999px;
+      padding: 9px 14px;
+      color: white;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      font-weight: 950;
+      cursor: pointer;
+      box-shadow: 0 10px 22px rgba(42, 39, 58, 0.16);
+    }
+
+    .toolbar-close {
+      color: var(--accent);
+      background: rgba(111, 93, 231, 0.12);
+    }
+
+    .orientation-toggle {
+      color: var(--accent);
+      background: rgba(111, 93, 231, 0.12);
+    }
+
+    .orientation-toggle.is-active {
+      color: white;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    }
+
+    body.landscape-view {
+      overflow: hidden;
+      background: #f7f3eb;
+    }
+
+    body.landscape-view .app-shell {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: 100dvh;
+      height: 100dvw;
+      max-width: none;
+      overflow-y: auto;
+      padding: max(12px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-top));
+      transform: translate(-50%, -50%) rotate(90deg);
+      transform-origin: center;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    @media (orientation: landscape) {
+      body.landscape-view { overflow: auto; }
+      body.landscape-view .app-shell {
+        position: static;
+        width: min(1440px, 100%);
+        height: auto;
+        max-width: 100%;
+        transform: none;
+      }
+    }
+
+    .toolbar-open-fixed {
+      position: fixed;
+      top: max(12px, env(safe-area-inset-top));
+      right: max(12px, env(safe-area-inset-right));
+      z-index: 60;
+      padding: 11px 18px;
+    }
+
+    .toolbar-open-fixed[hidden] { display: none; }
+
+    .toolbar-content {
+      display: grid;
+      gap: 14px;
+    }
+
+    .toolbar-content[hidden] { display: none; }
+
+    .size-control {
+      display: grid;
+      grid-template-columns: auto minmax(180px, 420px) auto;
+      gap: 12px;
+      align-items: center;
+      width: min(100%, 620px);
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .auth-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .auth-button, .upload-button {
+      border: 0;
+      border-radius: 999px;
+      padding: 11px 16px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .auth-button {
+      color: var(--accent);
+      background: rgba(111, 93, 231, 0.12);
+    }
+
+    .upload-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 16px;
+      border: 0;
+      border-radius: 999px;
+      color: white;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 12px 28px rgba(42, 39, 58, 0.18);
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .upload-control:hover, .upload-control:focus-within {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 34px rgba(42, 39, 58, 0.22);
+    }
+
+    .upload-control[aria-disabled="true"] {
+      cursor: not-allowed;
+      opacity: 0.58;
+    }
+
+    .upload-control input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    .search-control, .sort-control {
+      position: relative;
+      display: grid;
+      gap: 7px;
+      min-width: min(100%, 320px);
+      color: var(--muted);
+      font-weight: 900;
+    }
+
+    .search-label-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .tag-info-wrapper {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .tag-info-button {
+      display: inline-grid;
+      place-items: center;
+      width: 22px;
+      height: 22px;
+      border: 0;
+      border-radius: 50%;
+      color: white;
+      background: var(--accent);
+      font-size: 0.82rem;
+      font-weight: 950;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .tag-info-panel {
+      position: absolute;
+      left: 0;
+      top: calc(100% + 8px);
+      z-index: 20;
+      width: min(78vw, 320px);
+      padding: 12px 14px;
+      border: 1px solid rgba(104, 115, 134, 0.22);
+      border-radius: 16px;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 14px 34px rgba(42, 39, 58, 0.16);
+      font-size: 0.88rem;
+      font-weight: 800;
+      line-height: 1.55;
+    }
+
+    .tag-info-panel[hidden] { display: none; }
+
+    .tag-picker {
+      position: relative;
+      min-width: min(100%, 320px);
+    }
+
+    .tag-picker-button {
+      width: 100%;
+      border: 1px solid rgba(104, 115, 134, 0.24);
+      border-radius: 999px;
+      padding: 11px 16px;
+      color: var(--accent);
+      background: rgba(111, 93, 231, 0.1);
+      font-weight: 950;
+      cursor: pointer;
+      text-align: center;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+
+    .tag-picker-button:hover, .tag-picker-button:focus-visible {
+      border-color: var(--accent);
+      background: rgba(111, 93, 231, 0.16);
+      box-shadow: 0 0 0 4px var(--ring);
+      outline: none;
+    }
+
+    .tag-picker-panel {
+      position: fixed;
+      left: 50%;
+      top: var(--tag-picker-top, 96px);
+      transform: translateX(-50%);
+      z-index: 30;
+      display: grid;
+      gap: 12px;
+      width: min(calc(100vw - 24px), 760px);
+      max-height: min(70vh, 560px);
+      overflow: auto;
+      padding: 16px;
+      border: 1px solid rgba(104, 115, 134, 0.22);
+      border-radius: 22px;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.97);
+      box-shadow: 0 22px 58px rgba(42, 39, 58, 0.2);
+    }
+
+    .tag-picker-panel[hidden] { display: none; }
+
+    .tag-picker-heading {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .tag-picker-title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 950;
+    }
+
+    .tag-picker-help {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.86rem;
+      font-weight: 800;
+      line-height: 1.5;
+    }
+
+    .tag-picker-close {
+      flex: 0 0 auto;
+      display: inline-grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border: 0;
+      border-radius: 999px;
+      color: var(--muted);
+      background: rgba(104, 115, 134, 0.12);
+      font-weight: 950;
+      cursor: pointer;
+    }
+
+    .tag-picker-filter {
+      width: 100%;
+      border: 1px solid rgba(104, 115, 134, 0.24);
+      border-radius: 999px;
+      padding: 11px 14px;
+      outline: none;
+    }
+
+    .tag-picker-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      align-content: start;
+    }
+
+    .tag-option-button {
+      border: 0;
+      border-radius: 999px;
+      padding: 8px 12px;
+      color: var(--ink);
+      background: rgba(39, 49, 63, 0.09);
+      font-size: 0.86rem;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .tag-option-button:hover, .tag-option-button:focus-visible {
+      color: white;
+      background: var(--accent);
+      outline: none;
+    }
+
+    .tag-picker-empty {
+      margin: 0;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .tag-picker.advanced-on-mobile { display: none; }
+
+    .toolbar.is-expanded .tag-picker.advanced-on-mobile { display: grid; }
+
+    .search-control input, .sort-select { width: 100%; }
+
+    .sort-tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .sort-control {
+      min-width: min(100%, 240px);
+      color: var(--muted);
+      font-weight: 900;
+    }
+
+    .sort-save-button {
+      border: 0;
+      border-radius: 999px;
+      padding: 11px 16px;
+      color: white;
+      background: var(--accent);
+      font-weight: 950;
+      cursor: pointer;
+    }
+
+    .upload-note, .empty-message {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    .status-area {
+      display: grid;
+      gap: 10px;
+    }
+
+    .status-message {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0;
+      padding: 12px 14px;
+      border-radius: 16px;
+      font-size: 0.92rem;
+      font-weight: 800;
+      line-height: 1.55;
+    }
+
+    .status-message[hidden] { display: none; }
+
+    .status-message--success {
+      color: #146c43;
+      background: rgba(25, 135, 84, 0.12);
+      border: 1px solid rgba(25, 135, 84, 0.24);
+    }
+
+    .status-message--error {
+      color: #842029;
+      background: rgba(220, 53, 69, 0.12);
+      border: 1px solid rgba(220, 53, 69, 0.26);
+    }
+
+    .status-content { display: grid; gap: 6px; }
+
+    .status-title {
+      display: block;
+      font-size: 1rem;
+      font-weight: 950;
+    }
+
+    .status-detail { margin: 0; }
+
+    .status-close {
+      flex: 0 0 auto;
+      border: 0;
+      border-radius: 999px;
+      width: 28px;
+      height: 28px;
+      color: currentColor;
+      background: rgba(255, 255, 255, 0.62);
+      cursor: pointer;
+      font-weight: 950;
+      line-height: 1;
+    }
+
+    .empty-message {
+      grid-column: 1 / -1;
+      padding: 28px;
+      text-align: center;
+    }
+
+    .size-control input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .gallery {
+      display: grid;
+      gap: var(--gap, 16px);
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--card-min, 240px)), 1fr));
+      align-items: start;
+    }
+
+
+    .viewer-card {
+      overflow: hidden;
+      cursor: pointer;
+      transform: translateY(0);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .gallery .viewer-card {
+      overflow: visible;
+    }
+
+    .viewer-card:focus-within, .viewer-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 22px 54px rgba(42, 39, 58, 0.2);
+    }
+
+    .gallery .viewer-card:focus-within {
+      z-index: 5;
+    }
+
+    .toolbar.viewer-card { cursor: default; }
+    .toolbar.viewer-card:hover, .toolbar.viewer-card:focus-within { transform: none; }
+
+    .image-button {
+      display: block;
+      width: 100%;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .image-wrap {
+      position: relative;
+      overflow: hidden;
+      aspect-ratio: 16 / 9;
+      background: #e8edf4;
+    }
+
+    .image-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
+
+    .card-details {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.64);
+    }
+
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 28px;
+    }
+
+    .tag-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border: 0;
+      border-radius: 999px;
+      color: white;
+      background: rgba(39, 49, 63, 0.72);
+      font-size: 0.78rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    button.tag-chip {
+      cursor: pointer;
+    }
+
+    button.tag-chip::after {
+      content: "×";
+      display: inline-grid;
+      place-items: center;
+      width: 1em;
+      height: 1em;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.22);
+      font-size: 0.9em;
+      line-height: 1;
+    }
+
+    button.tag-chip:hover,
+    button.tag-chip:focus-visible {
+      background: rgba(220, 53, 69, 0.82);
+      outline: 3px solid rgba(220, 53, 69, 0.2);
+      outline-offset: 2px;
+    }
+
+    .tag-form {
+      position: relative;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag-input {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .tag-submit, .tag-list-toggle {
+      border: 0;
+      border-radius: 999px;
+      padding: 0 13px;
+      color: white;
+      background: var(--accent);
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .tag-list-toggle {
+      color: var(--accent);
+      background: rgba(111, 93, 231, 0.12);
+    }
+
+    .tag-suggestions, .search-suggestions {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(100% + 8px);
+      z-index: 25;
+      display: grid;
+      gap: 6px;
+      max-height: 220px;
+      overflow: auto;
+      padding: 8px;
+      border: 1px solid rgba(104, 115, 134, 0.22);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.97);
+      box-shadow: 0 14px 34px rgba(42, 39, 58, 0.16);
+    }
+
+    .tag-suggestions[hidden], .search-suggestions[hidden] { display: none; }
+
+    .tag-suggestion-button, .search-suggestion-button {
+      border: 0;
+      border-radius: 999px;
+      padding: 8px 11px;
+      color: var(--ink);
+      background: rgba(39, 49, 63, 0.08);
+      font-size: 0.84rem;
+      font-weight: 900;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .tag-suggestion-button:hover, .tag-suggestion-button:focus-visible,
+    .search-suggestion-button:hover, .search-suggestion-button:focus-visible {
+      color: white;
+      background: var(--accent);
+      outline: none;
+    }
+
+    .card-admin-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .replace-control, .delete-button, .move-button {
+      justify-self: start;
+      border: 0;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 0.82rem;
+      font-weight: 950;
+      cursor: pointer;
+    }
+
+    .replace-control {
+      color: var(--accent);
+      background: rgba(111, 93, 231, 0.12);
+    }
+
+    .replace-control:hover, .replace-control:focus-visible {
+      background: rgba(111, 93, 231, 0.2);
+    }
+
+    .delete-button {
+      color: #842029;
+      background: rgba(220, 53, 69, 0.12);
+    }
+
+    .delete-button:hover, .delete-button:focus-visible {
+      background: rgba(220, 53, 69, 0.2);
+    }
+
+    .move-button {
+      color: var(--muted);
+      background: rgba(104, 115, 134, 0.12);
+    }
+
+    .move-button:hover, .move-button:focus-visible {
+      background: rgba(104, 115, 134, 0.2);
+    }
+
+    .viewer-card[draggable="true"] { cursor: grab; }
+
+    .viewer-card.is-dragging { opacity: 0.52; }
+
+    .viewer-card.is-drop-target { outline: 4px solid var(--ring); outline-offset: -4px; }
+
+
+    @media (max-width: 560px) {
+      .app-shell { padding: 12px; }
+      .toolbar.viewer-card {
+        gap: 10px;
+        max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        margin-bottom: 14px;
+        padding: 12px;
+        border-radius: 20px;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+      }
+      .toolbar-actions { align-items: stretch; }
+      .toolbar-header-actions { width: 100%; }
+      .toolbar-header-actions > button { flex: 1; }
+      .size-control { grid-template-columns: auto minmax(120px, 1fr) auto; }
+      .auth-actions { width: 100%; }
+      .upload-control { justify-content: center; width: 100%; }
+      .tag-picker { width: 100%; }
+      .advanced-on-mobile { display: none; }
+      .toolbar.is-expanded .advanced-on-mobile { display: grid; }
+      body.toolbar-scroll-lock {
+        position: fixed;
+        width: 100%;
+        overflow: hidden;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <button id="toolbarOpenFixed" class="toolbar-open-fixed" type="button" hidden>開く</button>
+    <section id="toolbar" class="toolbar viewer-card" aria-label="一覧操作">
+      <div class="toolbar-header">
+        <p class="toolbar-title">表示・検索メニュー</p>
+        <div class="toolbar-header-actions">
+          <button id="orientationToggle" class="orientation-toggle" type="button" aria-pressed="false">横持ち表示</button>
+          <button id="toolbarClose" class="toolbar-close" type="button">閉じる</button>
+          <button id="toolbarToggle" class="toolbar-toggle" type="button" aria-expanded="false" aria-controls="toolbarContent">さらにメニューを開く</button>
+        </div>
+      </div>
+      <div class="toolbar-actions">
+        <label class="size-control" for="sizeRange">
+          <span>小</span>
+          <input id="sizeRange" type="range" min="160" max="1180" step="20" value="240" aria-label="一覧画像の大きさ">
+          <span>大</span>
+        </label>
+        <div class="search-control">
+          <div class="search-label-row">
+            <label for="searchInput">タグ検索</label>
+            <span class="tag-info-wrapper">
+              <button id="tagInfoButton" class="tag-info-button" type="button" aria-expanded="false" aria-controls="tagInfoPanel" aria-label="タグ検索の仕様を表示">i</button>
+              <span id="tagInfoPanel" class="tag-info-panel" role="status" hidden>タグ検索は大文字・小文字を区別しません。スペース・カンマ・読点区切りで複数入力すると、いずれかのタグに一致する画像を表示します。検索中のタグはURLにも保存されるため、そのURLを共有すると同じタグ検索状態で開けます。</span>
+            </span>
+          </div>
+          <input id="searchInput" type="search" placeholder="例: NT、内向、チーム" autocomplete="off" aria-label="タグで資料を検索">
+          <div id="searchSuggestions" class="search-suggestions" role="listbox" aria-label="既存タグ検索候補" hidden></div>
+        </div>
+        <div class="search-control advanced-on-mobile">
+          <label for="excludeSearchInput">検索除外タグ</label>
+          <input id="excludeSearchInput" type="search" placeholder="例: 古い、重複、不要" autocomplete="off" aria-label="除外したいタグで資料を絞り込み">
+        </div>
+        <div class="search-control tag-picker advanced-on-mobile">
+          <label for="tagPickerButton">タグ一覧</label>
+          <button id="tagPickerButton" class="tag-picker-button" type="button" aria-expanded="false" aria-controls="tagPickerPanel">全タグから選ぶ</button>
+          <div id="tagPickerPanel" class="tag-picker-panel" role="dialog" aria-modal="false" aria-labelledby="tagPickerTitle" hidden>
+            <div class="tag-picker-heading">
+              <div>
+                <p id="tagPickerTitle" class="tag-picker-title">全タグ一覧</p>
+                <p class="tag-picker-help">登録済み画像のタグを重複なしで表示します。クリックすると「タグ検索」に追加されます。</p>
+              </div>
+              <button id="tagPickerClose" class="tag-picker-close" type="button" aria-label="タグ一覧を閉じる">×</button>
+            </div>
+            <input id="tagPickerFilter" class="tag-picker-filter" type="search" placeholder="一覧内を絞り込み" autocomplete="off" aria-label="タグ一覧内を絞り込み">
+            <div id="tagPickerOptions" class="tag-picker-options" aria-label="選択できるタグ一覧"></div>
+          </div>
+        </div>
+      </div>
+      <div id="toolbarContent" class="toolbar-content" hidden>
+        <div class="toolbar-actions">
+          <div class="sort-tools">
+            <label class="sort-control" for="sortSelect">
+              <span>表示順</span>
+              <select id="sortSelect" class="sort-select" aria-label="画像の表示順">
+                <option value="createdAt">作成日順</option>
+                <option value="custom">保存した並び順</option>
+              </select>
+            </label>
+            <button id="saveOrderButton" class="sort-save-button" type="button" disabled>現在の表示順で保存</button>
+          </div>
+          <div class="auth-actions" aria-live="polite">
+            <span id="authStatus">ログインしていません</span>
+            <button id="loginButton" class="auth-button" type="button">管理者ログイン</button>
+            <button id="logoutButton" class="auth-button" type="button" hidden>ログアウト</button>
+          </div>
+          <label id="uploadControl" class="upload-control" for="imageUpload" aria-disabled="true" hidden>
+            <span id="uploadLabel">画像を追加</span>
+            <input id="imageUpload" type="file" accept="image/*" multiple aria-label="追加する画像を選択" disabled>
+          </label>
+        </div>
+        <div class="status-area" aria-live="polite">
+          <p id="uploadNote" class="upload-note" hidden>PCでは画像ファイルの選択に加えて、クリップボードの画像をそのまま Ctrl+V / ⌘V で貼り付けて追加できます。アップロードにはGoogleログインが必要です。</p>
+          <div id="operationStatus" class="status-message" hidden></div>
+        </div>
+      </div>
+    </section>
+    <section id="gallery" class="gallery" aria-label="MBTI資料サンプル一覧"></section>
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+    import { getFirestore, addDoc, collection, deleteDoc, onSnapshot, query, serverTimestamp, updateDoc, doc, writeBatch } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+    import { deleteObject, getDownloadURL, getStorage, ref, uploadBytes } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-storage.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDwIdnlDMOsu_dVvyDluC7TI-aa_dK6SFs",
+      authDomain: "mbti-materials.firebaseapp.com",
+      projectId: "mbti-materials",
+      storageBucket: "mbti-materials.firebasestorage.app",
+      messagingSenderId: "454015561766",
+      appId: "1:454015561766:web:c749e2a5e57d20dffbb6e7"
+    };
+
+    // 管理者UIDはこの1か所だけ変更してください。Security RulesのADMIN_UIDと同じ値にします。
+    const ADMIN_UID = "AutvrLYLvOfLUHhSbnVSaQMe9AT2";
+    const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+    const provider = new GoogleAuthProvider();
+
+    const materials = [];
+    let currentUser = null;
+    let isUploading = false;
+    let replacingMaterialId = "";
+    let draggedMaterialId = "";
+    let hasInitializedSort = false;
+
+    const gallery = document.querySelector("#gallery");
+    const sizeRange = document.querySelector("#sizeRange");
+    const imageUpload = document.querySelector("#imageUpload");
+    const searchInput = document.querySelector("#searchInput");
+    const searchSuggestions = document.querySelector("#searchSuggestions");
+    const excludeSearchInput = document.querySelector("#excludeSearchInput");
+    const uploadNote = document.querySelector("#uploadNote");
+    const authStatus = document.querySelector("#authStatus");
+    const loginButton = document.querySelector("#loginButton");
+    const logoutButton = document.querySelector("#logoutButton");
+    const uploadControl = document.querySelector("#uploadControl");
+    const uploadLabel = document.querySelector("#uploadLabel");
+    const sortSelect = document.querySelector("#sortSelect");
+    const saveOrderButton = document.querySelector("#saveOrderButton");
+    const operationStatus = document.querySelector("#operationStatus");
+    const toolbar = document.querySelector("#toolbar");
+    const toolbarToggle = document.querySelector("#toolbarToggle");
+    const orientationToggle = document.querySelector("#orientationToggle");
+    const toolbarClose = document.querySelector("#toolbarClose");
+    const toolbarOpenFixed = document.querySelector("#toolbarOpenFixed");
+    const toolbarContent = document.querySelector("#toolbarContent");
+    const tagInfoButton = document.querySelector("#tagInfoButton");
+    const tagInfoPanel = document.querySelector("#tagInfoPanel");
+    const tagPickerButton = document.querySelector("#tagPickerButton");
+    const tagPickerPanel = document.querySelector("#tagPickerPanel");
+    const tagPickerClose = document.querySelector("#tagPickerClose");
+    const tagPickerFilter = document.querySelector("#tagPickerFilter");
+    const tagPickerOptions = document.querySelector("#tagPickerOptions");
+    const searchParams = new URLSearchParams(window.location.search);
+    const initialTagQuery = searchParams.get("tag") || searchParams.get("tags") || "";
+    const initialExcludeTagQuery = searchParams.get("exclude") || searchParams.get("excludeTags") || "";
+    const minCardSize = Number(sizeRange.min);
+    const maxCardSize = Number(sizeRange.max);
+    const mobileToolbarQuery = window.matchMedia("(max-width: 560px)");
+    let toolbarScrollLockY = 0;
+    let isLandscapeView = false;
+
+
+    function updateOrientationToggle() {
+      orientationToggle.classList.toggle("is-active", isLandscapeView);
+      orientationToggle.setAttribute("aria-pressed", String(isLandscapeView));
+      orientationToggle.textContent = isLandscapeView ? "横持ち解除" : "横持ち表示";
+    }
+
+    async function setLandscapeView(isEnabled) {
+      isLandscapeView = isEnabled;
+      document.body.classList.toggle("landscape-view", isLandscapeView);
+      updateOrientationToggle();
+
+      if (!isLandscapeView) {
+        if (document.fullscreenElement) {
+          try { await document.exitFullscreen(); } catch (error) { console.warn("Fullscreen exit failed", error); }
+        }
+        return;
+      }
+
+      try {
+        if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+          await document.documentElement.requestFullscreen();
+        }
+        if (screen.orientation?.lock) await screen.orientation.lock("landscape");
+      } catch (error) {
+        console.info("Device orientation lock is unavailable; using app-side landscape view instead.", error);
+      }
+    }
+
+    function canUpload() {
+      return Boolean(currentUser && currentUser.uid === ADMIN_UID);
+    }
+
+    function shouldLockToolbarScroll() {
+      return !isLandscapeView && mobileToolbarQuery.matches && !toolbar.hidden && !toolbarContent.hidden;
+    }
+
+    function setToolbarScrollLock(isLocked) {
+      const isCurrentlyLocked = document.body.classList.contains("toolbar-scroll-lock");
+      if (isLocked === isCurrentlyLocked) return;
+
+      if (isLocked) {
+        toolbarScrollLockY = window.scrollY;
+        document.body.style.top = `-${toolbarScrollLockY}px`;
+        document.body.classList.add("toolbar-scroll-lock");
+        return;
+      }
+
+      document.body.classList.remove("toolbar-scroll-lock");
+      document.body.style.top = "";
+      window.scrollTo(0, toolbarScrollLockY);
+    }
+
+    function updateToolbarScrollLock() {
+      setToolbarScrollLock(shouldLockToolbarScroll());
+    }
+
+    function setToolbarExpanded(isExpanded) {
+      toolbarContent.hidden = !isExpanded;
+      toolbarToggle.setAttribute("aria-expanded", String(isExpanded));
+      toolbar.classList.toggle("is-expanded", isExpanded);
+      toolbarToggle.textContent = isExpanded ? "さらにメニューを閉じる" : "さらにメニューを開く";
+      updateToolbarScrollLock();
+    }
+
+    function setToolbarVisible(isVisible) {
+      toolbar.hidden = !isVisible;
+      toolbarOpenFixed.hidden = isVisible;
+      if (!isVisible) {
+        setTagInfoExpanded(false);
+        setTagPickerExpanded(false);
+        hideSearchSuggestions();
+      }
+      updateToolbarScrollLock();
+    }
+
+    function setTagInfoExpanded(isExpanded) {
+      tagInfoPanel.hidden = !isExpanded;
+      tagInfoButton.setAttribute("aria-expanded", String(isExpanded));
+    }
+
+    function allUniqueTags() {
+      const tagMap = new Map();
+      materials.forEach((item) => {
+        itemTags(item).forEach((tag) => {
+          const normalizedTag = String(tag || "").trim();
+          const key = normalizedTag.toLowerCase();
+          if (normalizedTag && !tagMap.has(key)) tagMap.set(key, normalizedTag);
+        });
+      });
+      return [...tagMap.values()].sort((a, b) => a.localeCompare(b, "ja", { sensitivity: "base" }));
+    }
+
+    function setTagPickerExpanded(isExpanded) {
+      tagPickerPanel.hidden = !isExpanded;
+      tagPickerButton.setAttribute("aria-expanded", String(isExpanded));
+      if (isExpanded) {
+        const buttonRect = tagPickerButton.getBoundingClientRect();
+        tagPickerPanel.style.setProperty("--tag-picker-top", `${Math.max(12, buttonRect.bottom + 10)}px`);
+        renderTagPicker();
+        window.requestAnimationFrame(() => tagPickerFilter.focus());
+      }
+    }
+
+    function addSearchTag(tag, { replaceLast = false } = {}) {
+      const normalizedTag = tag.toLowerCase();
+      const currentTerms = searchInput.value.trim().split(/[\s,、]+/).filter(Boolean);
+      const nextTerms = replaceLast ? currentTerms.slice(0, -1) : currentTerms;
+      if (!nextTerms.some((term) => term.toLowerCase() === normalizedTag)) nextTerms.push(tag);
+      searchInput.value = nextTerms.join(" ");
+      syncSearchQueryToUrl();
+      renderSearchSuggestions();
+      renderGallery();
+    }
+
+    function renderTagPicker() {
+      const allTags = allUniqueTags();
+      const filterText = tagPickerFilter.value.trim().toLowerCase();
+      const tags = allTags.filter((tag) => tag.toLowerCase().includes(filterText));
+      tagPickerButton.textContent = allTags.length ? `全タグから選ぶ（${allTags.length}件）` : "全タグから選ぶ";
+      tagPickerOptions.innerHTML = tags.length
+        ? tags.map((tag) => `<button class="tag-option-button" type="button" data-tag="${escapeHtml(tag)}">${escapeHtml(tag)}</button>`).join("")
+        : `<p class="tag-picker-empty">${allTags.length ? "条件に一致するタグがありません。" : "まだ登録済みタグがありません。"}</p>`;
+    }
+
+
+    function matchingExistingTags(queryText, item, { showAll = false } = {}) {
+      const query = queryText.trim().toLowerCase();
+      const itemTagKeys = new Set(itemTags(item).map((tag) => tag.toLowerCase()));
+      if (!query && !showAll) return [];
+      return allUniqueTags()
+        .filter((tag) => (showAll || tag.toLowerCase().includes(query)) && !itemTagKeys.has(tag.toLowerCase()))
+        .slice(0, showAll ? 80 : 8);
+    }
+
+    function matchingSearchTags(queryText) {
+      const query = queryText.trim().split(/[\s,、]+/).pop()?.toLowerCase() || "";
+      const selectedTagKeys = new Set(splitTagQuery(searchInput.value));
+      if (!query) return [];
+      return allUniqueTags()
+        .filter((tag) => tag.toLowerCase().includes(query) && !selectedTagKeys.has(tag.toLowerCase()))
+        .slice(0, 8);
+    }
+
+    function canonicalTagName(value) {
+      const normalizedValue = value.trim();
+      const existingTag = allUniqueTags().find((tag) => tag.toLowerCase() === normalizedValue.toLowerCase());
+      return existingTag || normalizedValue;
+    }
+
+    function renderTagSuggestions(form, options = {}) {
+      if (!form) return;
+      const input = form.elements.tag;
+      const suggestions = form.querySelector(".tag-suggestions");
+      const item = materials[Number(form.dataset.index)];
+      if (!input || !suggestions || !item) return;
+      const tags = matchingExistingTags(input.value, item, options);
+      suggestions.hidden = !tags.length;
+      suggestions.innerHTML = tags.map((tag) => (
+        `<button class="tag-suggestion-button" type="button" role="option" data-tag="${escapeHtml(tag)}">${escapeHtml(tag)}</button>`
+      )).join("");
+    }
+
+    function renderSearchSuggestions() {
+      const tags = matchingSearchTags(searchInput.value);
+      searchSuggestions.hidden = !tags.length;
+      searchSuggestions.innerHTML = tags.map((tag) => (
+        `<button class="search-suggestion-button" type="button" role="option" data-tag="${escapeHtml(tag)}">${escapeHtml(tag)}</button>`
+      )).join("");
+    }
+
+    function hideSearchSuggestions() {
+      searchSuggestions.hidden = true;
+      searchSuggestions.innerHTML = "";
+    }
+
+    function hideTagSuggestions(form) {
+      const suggestions = form?.querySelector(".tag-suggestions");
+      if (!suggestions) return;
+      suggestions.hidden = true;
+      suggestions.innerHTML = "";
+    }
+
+    async function addTagToMaterial(index, rawValue, input) {
+      if (!canUpload()) {
+        setMessage("タグ追加には管理者Googleアカウントでのログインが必要です。");
+        return;
+      }
+      const value = canonicalTagName(rawValue);
+      if (!value) return;
+      const item = materials[index];
+      if (!item) return;
+      const tags = itemTags(item);
+      if (tags.some((tag) => tag.toLowerCase() === value.toLowerCase())) {
+        if (input) input.value = "";
+        hideTagSuggestions(input?.closest(".tag-form"));
+        return;
+      }
+      try {
+        await updateDoc(doc(db, "materials", item.id), { tags: [...tags, value] });
+        if (input) input.value = "";
+        hideTagSuggestions(input?.closest(".tag-form"));
+      } catch (error) {
+        console.error("Tag update failed", error);
+        showFirebaseError("タグ更新", error);
+      }
+    }
+
+    async function removeTagFromMaterial(index, rawValue) {
+      if (!canUpload()) {
+        setMessage("タグ削除には管理者Googleアカウントでのログインが必要です。");
+        return;
+      }
+
+      const item = materials[index];
+      if (!item) return;
+      const tagName = String(rawValue || "").trim();
+      if (!tagName) return;
+
+      const title = item.title || item.originalFileName || "この画像";
+      if (!window.confirm(`「${tagName}」タグを${title}から外しますか？\nこの画像からタグの紐づけだけを外します。タグマスタ自体は削除しません。`)) return;
+
+      const remainingTags = itemTags(item).filter((tag) => tag.toLowerCase() !== tagName.toLowerCase());
+      if (remainingTags.length === itemTags(item).length) return;
+
+      try {
+        await updateDoc(doc(db, "materials", item.id), { tags: remainingTags });
+        showSuccessMessage(`${title}から「${tagName}」タグを外しました。タグマスタ自体は削除していません。`);
+      } catch (error) {
+        console.error("Tag removal failed", error);
+        showFirebaseError("タグ削除", error);
+      }
+    }
+
+    function syncSearchQueryToUrl() {
+      const queryText = searchInput.value.trim();
+      const excludeQueryText = excludeSearchInput.value.trim();
+      const nextUrl = new URL(window.location.href);
+      if (queryText) nextUrl.searchParams.set("tag", queryText);
+      else nextUrl.searchParams.delete("tag");
+      if (excludeQueryText) nextUrl.searchParams.set("exclude", excludeQueryText);
+      else nextUrl.searchParams.delete("exclude");
+      nextUrl.searchParams.delete("tags");
+      nextUrl.searchParams.delete("excludeTags");
+      window.history.replaceState({}, "", nextUrl);
+    }
+
+    function setMessage(message) {
+      uploadNote.textContent = message;
+    }
+
+    function clearOperationStatus() {
+      operationStatus.hidden = true;
+      operationStatus.className = "status-message";
+      operationStatus.innerHTML = "";
+    }
+
+    function showSuccessMessage(message) {
+      operationStatus.hidden = false;
+      operationStatus.className = "status-message status-message--success";
+      operationStatus.innerHTML = `
+        <div class="status-content">
+          <strong class="status-title">処理完了</strong>
+          <p class="status-detail">${escapeHtml(message)}</p>
+        </div>
+        <button class="status-close" type="button" aria-label="成功メッセージを閉じる">×</button>
+      `;
+    }
+
+    function getFirebaseUserMessage(errorCode, stage) {
+      if (errorCode === "storage/unauthorized") return "Storageのアクセス権限によってアップロードまたは取得が拒否されました。";
+      if (errorCode?.startsWith("storage/")) return "Storage処理で権限または通信の問題が発生しました。";
+      if (errorCode?.startsWith("auth/")) return "Googleログインまたはログアウトの認証処理で問題が発生しました。";
+      if (errorCode?.startsWith("firestore/")) return "Firestoreの読み書き権限または通信に問題が発生しました。";
+      if (stage?.includes("Firestore")) return "Firestoreの処理中に問題が発生しました。";
+      return "Firebase処理で問題が発生しました。時間をおいて再度お試しください。";
+    }
+
+    function showFirebaseError(stage, error) {
+      const errorCode = error?.code || "コードなし";
+      const errorMessage = error?.message || String(error || "詳細不明のエラー");
+      const userMessage = getFirebaseUserMessage(error?.code, stage);
+      operationStatus.hidden = false;
+      operationStatus.className = "status-message status-message--error";
+      operationStatus.innerHTML = `
+        <div class="status-content">
+          <strong class="status-title">Firebaseエラー</strong>
+          <p class="status-detail">処理：${escapeHtml(stage)}</p>
+          <p class="status-detail">コード：${escapeHtml(errorCode)}</p>
+          <p class="status-detail">内容：${escapeHtml(errorMessage)}</p>
+          <p class="status-detail">${escapeHtml(userMessage)}</p>
+        </div>
+        <button class="status-close" type="button" aria-label="エラーメッセージを閉じる">×</button>
+      `;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;"
+      }[char]));
+    }
+
+    function applyCardSize(size) {
+      const clampedSize = Math.min(maxCardSize, Math.max(minCardSize, Number(size)));
+      document.documentElement.style.setProperty("--card-min", `${clampedSize}px`);
+      document.documentElement.style.setProperty("--gap", `${Math.max(12, Math.round(clampedSize * 0.055))}px`);
+      sizeRange.value = clampedSize;
+    }
+
+    function itemTags(item) {
+      return Array.isArray(item.tags) ? item.tags : [];
+    }
+
+    function splitTagQuery(queryText) {
+      return queryText
+        .split(/[\s,、，]+/)
+        .map((value) => value.trim().toLowerCase())
+        .filter(Boolean);
+    }
+
+    function matchesSearch(item, includeQueryText, excludeQueryText) {
+      const tags = itemTags(item).map((tag) => tag.toLowerCase());
+      const includeTerms = splitTagQuery(includeQueryText);
+      const excludeTerms = splitTagQuery(excludeQueryText);
+      const hasIncludedTag = !includeTerms.length || includeTerms.some((term) => tags.some((tag) => tag.includes(term)));
+      const hasExcludedTag = excludeTerms.some((term) => tags.some((tag) => tag.includes(term)));
+      return hasIncludedTag && !hasExcludedTag;
+    }
+
+    function timestampMillis(value) {
+      if (typeof value?.toMillis === "function") return value.toMillis();
+      if (typeof value?.seconds === "number") return value.seconds * 1000;
+      return 0;
+    }
+
+    function customOrderValue(item) {
+      return Number.isFinite(item.sortOrder) ? item.sortOrder : timestampMillis(item.createdAt);
+    }
+
+    function compareByTitle(a, b) {
+      return (a.title || a.originalFileName || "").localeCompare(b.title || b.originalFileName || "", "ja");
+    }
+
+    function sortedMaterials() {
+      return [...materials].sort((a, b) => {
+        if (sortSelect.value === "custom") {
+          return customOrderValue(a) - customOrderValue(b) || timestampMillis(a.createdAt) - timestampMillis(b.createdAt) || compareByTitle(a, b);
+        }
+        return timestampMillis(a.createdAt) - timestampMillis(b.createdAt) || compareByTitle(a, b);
+      });
+    }
+
+    function visibleEntries() {
+      const queryText = searchInput.value.trim().toLowerCase();
+      const excludeQueryText = excludeSearchInput.value.trim().toLowerCase();
+      return sortedMaterials()
+        .map((item, displayIndex) => ({ item, displayIndex, materialIndex: materials.findIndex((material) => material.id === item.id) }))
+        .filter(({ item }) => matchesSearch(item, queryText, excludeQueryText));
+    }
+
+    function renderGallery() {
+      renderTagPicker();
+      const queryText = searchInput.value.trim().toLowerCase();
+      const excludeQueryText = excludeSearchInput.value.trim().toLowerCase();
+      const visibleItems = visibleEntries();
+
+      if (!visibleItems.length) {
+        gallery.innerHTML = `<p class="empty-message">${queryText || excludeQueryText ? "条件に一致する画像がありません。検索タグや除外タグを変更してください。" : "Firestoreに保存された画像はまだありません。"}</p>`;
+        saveOrderButton.disabled = true;
+        return;
+      }
+
+      gallery.innerHTML = visibleItems.map(({ item, materialIndex }, visibleIndex) => {
+        const title = escapeHtml(item.title || item.originalFileName || "無題の画像");
+        const src = escapeHtml(item.imageUrl);
+        const isLoggedIn = Boolean(currentUser);
+        const canEditTags = canUpload();
+        const tags = itemTags(item).map((value) => {
+          const escapedValue = escapeHtml(value);
+          if (!canEditTags) return `<span class="tag-chip">${escapedValue}</span>`;
+          return `<button class="tag-chip" type="button" data-remove-tag-index="${materialIndex}" data-tag="${escapedValue}" aria-label="${title}から${escapedValue}タグを外す" title="クリックしてこの画像からタグを外す">${escapedValue}</button>`;
+        }).join("");
+        const adminControls = canEditTags ? `
+          <div class="card-admin-actions">
+            <button class="move-button" type="button" data-move-index="${visibleIndex}" data-move-direction="-1" ${visibleIndex === 0 ? "disabled" : ""}>前へ</button>
+            <button class="move-button" type="button" data-move-index="${visibleIndex}" data-move-direction="1" ${visibleIndex === visibleItems.length - 1 ? "disabled" : ""}>後へ</button>
+            <label class="replace-control" for="replace-${escapeHtml(item.id)}" aria-label="${title}を上書き">
+              画像を上書き
+              <input id="replace-${escapeHtml(item.id)}" class="sr-only replace-input" type="file" accept="image/*" data-replace-index="${materialIndex}">
+            </label>
+            <button class="delete-button" type="button" data-delete-index="${materialIndex}" aria-label="${title}を削除">画像を削除</button>
+          </div>
+        ` : "";
+
+        return `
+          <article class="viewer-card" draggable="${canEditTags}" data-material-id="${escapeHtml(item.id)}">
+            <button class="image-button" type="button" data-index="${materialIndex}" aria-label="${title}を表示">
+              <div class="image-wrap"><img src="${src}" alt="${title}"></div>
+            </button>
+            <div class="card-details">
+              <div class="tag-list" aria-label="${title}のタグ">${tags || "<span class=\"upload-note\">タグなし</span>"}</div>
+              ${isLoggedIn ? `
+              <form class="tag-form" data-index="${materialIndex}" aria-label="${title}にタグを追加">
+                <input class="tag-input" name="tag" type="text" placeholder="タグを追加" autocomplete="off" aria-label="追加するタグ" ${canEditTags ? "" : "disabled"}>
+                <button class="tag-submit" type="submit" ${canEditTags ? "" : "disabled"}>追加</button>
+                <button class="tag-list-toggle" type="button" ${canEditTags ? "" : "disabled"} aria-label="既存タグ一覧から追加">タグ一覧</button>
+                <div class="tag-suggestions" role="listbox" aria-label="既存タグ候補" hidden></div>
+              </form>` : ""}
+              ${adminControls}
+            </div>
+          </article>
+        `;
+      }).join("");
+      saveOrderButton.disabled = !canUpload() || !visibleItems.length;
+    }
+
+    function updateAuthUi() {
+      const uploadAllowed = canUpload() && !isUploading && !replacingMaterialId;
+      imageUpload.disabled = !uploadAllowed;
+      uploadControl.hidden = !currentUser;
+      uploadNote.hidden = !currentUser;
+      uploadControl.setAttribute("aria-disabled", String(!uploadAllowed));
+      uploadLabel.textContent = isUploading ? "アップロード中..." : "画像を追加";
+      loginButton.hidden = Boolean(currentUser);
+      logoutButton.hidden = !currentUser;
+      authStatus.textContent = currentUser ? `${currentUser.displayName || "ログイン中"}でログイン中` : "ログインしていません";
+      if (!currentUser) setMessage("閲覧はログイン不要です。アップロードするにはGoogleログインしてください。");
+      else if (!canUpload()) setMessage("このGoogleアカウントにはアップロード権限がありません。管理者UIDを設定してください。");
+      else if (replacingMaterialId) setMessage("画像を上書き中です。完了までお待ちください。");
+      else setMessage("画像ファイルを選択、または Ctrl+V / ⌘V で貼り付けてアップロードできます。各画像の「画像を上書き」から差し替えもできます。");
+      renderGallery();
+    }
+
+    function resetMaterialsToCurrentDisplayOrder() {
+      materials.splice(0, materials.length, ...sortedMaterials());
+    }
+
+    function applyLocalCustomOrder() {
+      materials.forEach((item, index) => { item.sortOrder = index + 1; });
+    }
+
+    function moveVisibleItem(fromIndex, direction) {
+      const entries = visibleEntries();
+      const toIndex = fromIndex + direction;
+      if (toIndex < 0 || toIndex >= entries.length) return;
+      const fromMaterial = entries[fromIndex].item;
+      const toMaterial = entries[toIndex].item;
+      resetMaterialsToCurrentDisplayOrder();
+      const fromPosition = materials.findIndex((item) => item.id === fromMaterial.id);
+      const toPosition = materials.findIndex((item) => item.id === toMaterial.id);
+      if (fromPosition < 0 || toPosition < 0) return;
+      materials.splice(fromPosition, 1);
+      materials.splice(toPosition, 0, fromMaterial);
+      applyLocalCustomOrder();
+      sortSelect.value = "custom";
+      renderGallery();
+    }
+
+    function moveDraggedItem(targetMaterialId) {
+      if (!draggedMaterialId || draggedMaterialId === targetMaterialId) return;
+      resetMaterialsToCurrentDisplayOrder();
+      const fromPosition = materials.findIndex((item) => item.id === draggedMaterialId);
+      const toPosition = materials.findIndex((item) => item.id === targetMaterialId);
+      if (fromPosition < 0 || toPosition < 0) return;
+      const [draggedItem] = materials.splice(fromPosition, 1);
+      materials.splice(toPosition, 0, draggedItem);
+      applyLocalCustomOrder();
+      sortSelect.value = "custom";
+      renderGallery();
+    }
+
+    async function saveCurrentOrder() {
+      if (!canUpload()) {
+        setMessage("並び順の保存には管理者Googleアカウントでのログインが必要です。");
+        return;
+      }
+      const entries = visibleEntries();
+      if (!entries.length) return;
+      const batch = writeBatch(db);
+      entries.forEach(({ item }, index) => {
+        batch.update(doc(db, "materials", item.id), { sortOrder: index + 1, orderUpdatedAt: serverTimestamp() });
+      });
+      try {
+        await batch.commit();
+        sortSelect.value = "custom";
+        showSuccessMessage("現在表示されている順番を保存しました。次回以降もこの順番で表示できます。");
+      } catch (error) {
+        console.error("Order save failed", error);
+        showFirebaseError("並び順保存", error);
+      }
+    }
+
+    function maximizeFromList(index) {
+      applyCardSize(maxCardSize);
+      const card = gallery.querySelector(`[data-index="${index}"]`)?.closest(".viewer-card");
+      card?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    function validateImageFile(file) {
+      if (!file.type.startsWith("image/")) return `${file.name || "選択ファイル"}は画像ファイルではありません。`;
+      if (file.size > MAX_IMAGE_SIZE_BYTES) return `${file.name || "画像"}はサイズ上限（10MB）を超えています。`;
+      return "";
+    }
+
+    async function deleteMaterial(index) {
+      if (!canUpload()) {
+        setMessage("削除には管理者Googleアカウントでのログインが必要です。");
+        return;
+      }
+
+      const item = materials[index];
+      if (!item) return;
+
+      const title = item.title || item.originalFileName || "この画像";
+      if (!window.confirm(`${title}を削除しますか？この操作は元に戻せません。`)) return;
+
+      try {
+        if (item.storagePath) {
+          try {
+            await deleteObject(ref(storage, item.storagePath));
+          } catch (error) {
+            if (error?.code !== "storage/object-not-found") throw error;
+          }
+        }
+        await deleteDoc(doc(db, "materials", item.id));
+        showSuccessMessage(`${title}を削除しました。`);
+      } catch (error) {
+        console.error("Material deletion failed", error);
+        showFirebaseError("画像削除", error);
+      }
+    }
+
+    async function replaceMaterialImage(index, file) {
+      if (!canUpload()) {
+        setMessage("画像の上書きには管理者Googleアカウントでのログインが必要です。");
+        return false;
+      }
+
+      const item = materials[index];
+      if (!item || !file) return false;
+
+      const validationMessage = validateImageFile(file);
+      if (validationMessage) {
+        setMessage(validationMessage);
+        return false;
+      }
+
+      const previousTitle = item.title || item.originalFileName || "この画像";
+      const extension = file.name.includes(".") ? file.name.split(".").pop().toLowerCase() : "bin";
+      const fallbackName = `${crypto.randomUUID()}.${extension}`;
+      const storagePath = item.storagePath || `users/${currentUser.uid}/images/${fallbackName}`;
+      const storageRef = ref(storage, storagePath);
+
+      replacingMaterialId = item.id;
+      updateAuthUi();
+      setMessage(`${previousTitle}を上書き中です...`);
+
+      try {
+        try {
+          await uploadBytes(storageRef, file, { contentType: file.type });
+        } catch (error) {
+          console.error("Firebase replacement failed at Storage upload", error);
+          showFirebaseError("Storage上書きアップロード", error);
+          throw error;
+        }
+
+        let imageUrl = "";
+        try {
+          imageUrl = await getDownloadURL(storageRef);
+        } catch (error) {
+          console.error("Firebase replacement failed at download URL retrieval", error);
+          showFirebaseError("上書き後ダウンロードURL取得", error);
+          throw error;
+        }
+
+        try {
+          await updateDoc(doc(db, "materials", item.id), {
+            title: file.name?.replace(/\.[^/.]+$/, "") || item.title || "上書き画像",
+            imageUrl,
+            storagePath,
+            originalFileName: file.name || item.originalFileName || fallbackName,
+            updatedAt: serverTimestamp()
+          });
+        } catch (error) {
+          console.error("Firebase replacement failed at Firestore update", error);
+          showFirebaseError("Firestore上書き更新", error);
+          throw error;
+        }
+
+        showSuccessMessage(`${previousTitle}を${file.name || "選択した画像"}で上書きしました。`);
+        return true;
+      } catch (error) {
+        return false;
+      } finally {
+        replacingMaterialId = "";
+        updateAuthUi();
+      }
+    }
+
+    async function uploadImageFiles(files, sourceLabel = "Upload") {
+      if (!canUpload()) {
+        setMessage("アップロードには管理者Googleアカウントでのログインが必要です。");
+        return false;
+      }
+
+      const fileList = [...files];
+      const errors = fileList.map(validateImageFile).filter(Boolean);
+      const imageFiles = fileList.filter((file) => !validateImageFile(file));
+      if (errors.length) {
+        console.warn("Rejected files", errors);
+        setMessage(errors[0]);
+      }
+      if (!imageFiles.length) return false;
+
+      isUploading = true;
+      updateAuthUi();
+      setMessage(`${imageFiles.length}枚の画像をアップロード中です...`);
+
+      try {
+        await Promise.all(imageFiles.map(async (file) => {
+          const extension = file.name.includes(".") ? file.name.split(".").pop().toLowerCase() : "bin";
+          const uniqueName = `${crypto.randomUUID()}.${extension}`;
+          const storagePath = `users/${currentUser.uid}/images/${uniqueName}`;
+          const storageRef = ref(storage, storagePath);
+          let imageUrl = "";
+
+          try {
+            await uploadBytes(storageRef, file, { contentType: file.type });
+          } catch (error) {
+            console.error("Firebase upload failed at Storage upload", error);
+            showFirebaseError("Storageアップロード", error);
+            throw error;
+          }
+
+          try {
+            imageUrl = await getDownloadURL(storageRef);
+          } catch (error) {
+            console.error("Firebase upload failed at download URL retrieval", error);
+            showFirebaseError("ダウンロードURL取得", error);
+            throw error;
+          }
+
+          try {
+            await addDoc(collection(db, "materials"), {
+              title: file.name?.replace(/\.[^/.]+$/, "") || `${sourceLabel}画像`,
+              tags: [],
+              imageUrl,
+              storagePath,
+              ownerId: currentUser.uid,
+              originalFileName: file.name || uniqueName,
+              createdAt: serverTimestamp()
+            });
+          } catch (error) {
+            console.error("Firebase upload failed at Firestore registration", error);
+            showFirebaseError("Firestore登録", error);
+            throw error;
+          }
+        }));
+        showSuccessMessage(`${imageFiles.length}枚の画像をアップロードしました。`);
+        return true;
+      } catch (error) {
+        return false;
+      } finally {
+        isUploading = false;
+        updateAuthUi();
+      }
+    }
+
+    loginButton.addEventListener("click", async () => {
+      try { await signInWithPopup(auth, provider); }
+      catch (error) {
+        console.error("Google login failed", error);
+        showFirebaseError("Googleログイン", error);
+      }
+    });
+
+    logoutButton.addEventListener("click", async () => {
+      try { await signOut(auth); }
+      catch (error) {
+        console.error("Logout failed", error);
+        showFirebaseError("ログアウト", error);
+      }
+    });
+
+    imageUpload.addEventListener("change", async (event) => {
+      await uploadImageFiles(event.target.files);
+      event.target.value = "";
+    });
+
+    document.addEventListener("paste", async (event) => {
+      const clipboardFiles = [...event.clipboardData?.items || []]
+        .filter((item) => item.kind === "file")
+        .map((item) => item.getAsFile())
+        .filter(Boolean);
+      if (!clipboardFiles.length) return;
+      event.preventDefault();
+      await uploadImageFiles(clipboardFiles, "Paste");
+      document.body.classList.add("paste-highlight");
+      window.setTimeout(() => document.body.classList.remove("paste-highlight"), 420);
+    });
+
+    gallery.addEventListener("submit", async (event) => {
+      const form = event.target.closest(".tag-form");
+      if (!form) return;
+      event.preventDefault();
+      await addTagToMaterial(Number(form.dataset.index), form.elements.tag.value, form.elements.tag);
+    });
+
+    gallery.addEventListener("input", (event) => {
+      const input = event.target.closest(".tag-input");
+      if (!input) return;
+      renderTagSuggestions(input.closest(".tag-form"));
+    });
+
+    gallery.addEventListener("change", async (event) => {
+      const input = event.target.closest(".replace-input");
+      if (!input) return;
+      const [file] = input.files || [];
+      await replaceMaterialImage(Number(input.dataset.replaceIndex), file);
+      input.value = "";
+    });
+
+    gallery.addEventListener("click", async (event) => {
+      const listToggle = event.target.closest(".tag-list-toggle");
+      if (listToggle) {
+        const form = listToggle.closest(".tag-form");
+        const suggestions = form.querySelector(".tag-suggestions");
+        if (suggestions.hidden) renderTagSuggestions(form, { showAll: true });
+        else hideTagSuggestions(form);
+        return;
+      }
+
+      const suggestionButton = event.target.closest(".tag-suggestion-button");
+      if (suggestionButton) {
+        const form = suggestionButton.closest(".tag-form");
+        await addTagToMaterial(Number(form.dataset.index), suggestionButton.dataset.tag, form.elements.tag);
+        return;
+      }
+
+      const removeTagButton = event.target.closest("[data-remove-tag-index]");
+      if (removeTagButton) {
+        await removeTagFromMaterial(Number(removeTagButton.dataset.removeTagIndex), removeTagButton.dataset.tag);
+        return;
+      }
+
+      const deleteButton = event.target.closest(".delete-button");
+      const moveButton = event.target.closest(".move-button");
+      if (moveButton) {
+        moveVisibleItem(Number(moveButton.dataset.moveIndex), Number(moveButton.dataset.moveDirection));
+        return;
+      }
+
+      if (deleteButton) {
+        await deleteMaterial(Number(deleteButton.dataset.deleteIndex));
+        return;
+      }
+
+      const button = event.target.closest(".image-button");
+      if (button) maximizeFromList(Number(button.dataset.index));
+    });
+
+    gallery.addEventListener("dragstart", (event) => {
+      const card = event.target.closest(".viewer-card[draggable=\"true\"]");
+      if (!card || !canUpload()) return;
+      draggedMaterialId = card.dataset.materialId;
+      card.classList.add("is-dragging");
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", draggedMaterialId);
+    });
+
+    gallery.addEventListener("dragover", (event) => {
+      const card = event.target.closest(".viewer-card[draggable=\"true\"]");
+      if (!card || !draggedMaterialId) return;
+      event.preventDefault();
+      card.classList.add("is-drop-target");
+    });
+
+    gallery.addEventListener("dragleave", (event) => {
+      event.target.closest(".viewer-card")?.classList.remove("is-drop-target");
+    });
+
+    gallery.addEventListener("drop", (event) => {
+      const card = event.target.closest(".viewer-card[draggable=\"true\"]");
+      if (!card || !draggedMaterialId) return;
+      event.preventDefault();
+      moveDraggedItem(card.dataset.materialId);
+    });
+
+    gallery.addEventListener("dragend", () => {
+      draggedMaterialId = "";
+      gallery.querySelectorAll(".is-dragging, .is-drop-target").forEach((card) => card.classList.remove("is-dragging", "is-drop-target"));
+    });
+
+    operationStatus.addEventListener("click", (event) => {
+      if (event.target.closest(".status-close")) clearOperationStatus();
+    });
+
+    orientationToggle.addEventListener("click", () => {
+      setLandscapeView(!isLandscapeView);
+    });
+
+    toolbarToggle.addEventListener("click", () => {
+      setToolbarExpanded(toolbarContent.hidden);
+    });
+
+    toolbarClose.addEventListener("click", () => {
+      setToolbarVisible(false);
+    });
+
+    toolbarOpenFixed.addEventListener("click", () => {
+      setToolbarVisible(true);
+      toolbarToggle.focus();
+    });
+
+    document.addEventListener("fullscreenchange", () => {
+      if (!document.fullscreenElement && isLandscapeView) setLandscapeView(false);
+    });
+
+    if (mobileToolbarQuery.addEventListener) {
+      mobileToolbarQuery.addEventListener("change", updateToolbarScrollLock);
+    } else {
+      mobileToolbarQuery.addListener(updateToolbarScrollLock);
+    }
+
+    tagInfoButton.addEventListener("click", () => {
+      setTagInfoExpanded(tagInfoPanel.hidden);
+    });
+
+    tagPickerButton.addEventListener("click", () => {
+      setTagPickerExpanded(tagPickerPanel.hidden);
+    });
+
+    tagPickerClose.addEventListener("click", () => {
+      setTagPickerExpanded(false);
+      tagPickerButton.focus();
+    });
+
+    tagPickerFilter.addEventListener("input", renderTagPicker);
+
+    tagPickerOptions.addEventListener("click", (event) => {
+      const button = event.target.closest(".tag-option-button");
+      if (!button) return;
+      addSearchTag(button.dataset.tag);
+      setTagPickerExpanded(false);
+      hideSearchSuggestions();
+      searchInput.focus();
+    });
+
+    searchSuggestions.addEventListener("click", (event) => {
+      const button = event.target.closest(".search-suggestion-button");
+      if (!button) return;
+      addSearchTag(button.dataset.tag, { replaceLast: true });
+      hideSearchSuggestions();
+      searchInput.focus();
+    });
+
+    document.addEventListener("click", (event) => {
+      if (!tagInfoPanel.hidden && !event.target.closest(".tag-info-wrapper")) setTagInfoExpanded(false);
+      if (!tagPickerPanel.hidden && !event.target.closest(".tag-picker")) setTagPickerExpanded(false);
+      if (!event.target.closest(".tag-form")) gallery.querySelectorAll(".tag-form").forEach(hideTagSuggestions);
+      if (!event.target.closest("#searchInput") && !event.target.closest("#searchSuggestions")) hideSearchSuggestions();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape" || tagPickerPanel.hidden) return;
+      setTagPickerExpanded(false);
+      tagPickerButton.focus();
+    });
+
+    sizeRange.addEventListener("input", (event) => applyCardSize(event.target.value));
+    searchInput.addEventListener("input", () => {
+      syncSearchQueryToUrl();
+      renderSearchSuggestions();
+      renderGallery();
+    });
+    searchInput.addEventListener("focus", renderSearchSuggestions);
+    excludeSearchInput.addEventListener("input", () => {
+      syncSearchQueryToUrl();
+      renderGallery();
+    });
+    sortSelect.addEventListener("change", renderGallery);
+    saveOrderButton.addEventListener("click", saveCurrentOrder);
+    if (initialTagQuery) {
+      searchInput.value = initialTagQuery;
+      setToolbarExpanded(true);
+    }
+    if (initialExcludeTagQuery) {
+      excludeSearchInput.value = initialExcludeTagQuery;
+      setToolbarExpanded(true);
+    }
+    syncSearchQueryToUrl();
+    applyCardSize(sizeRange.value);
+    updateOrientationToggle();
+    updateAuthUi();
+
+    onAuthStateChanged(auth, (user) => {
+      currentUser = user;
+      updateAuthUi();
+    });
+
+    onSnapshot(query(collection(db, "materials")), (snapshot) => {
+      materials.splice(0, materials.length, ...snapshot.docs.map((documentSnapshot) => ({
+        id: documentSnapshot.id,
+        ...documentSnapshot.data()
+      })));
+      if (!hasInitializedSort) {
+        sortSelect.value = materials.some((item) => Number.isFinite(item.sortOrder)) ? "custom" : "createdAt";
+        hasInitializedSort = true;
+      }
+      renderGallery();
+    }, (error) => {
+      console.error("Firestore materials subscription failed", error);
+      showFirebaseError("Firestore一覧取得", error);
+    });
+  </script>
+</body>
+</html>
